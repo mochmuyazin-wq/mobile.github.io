@@ -1,8 +1,12 @@
 import { Platform, Pressable } from "react-native";
 import { Tabs } from "expo-router";
-import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
+// NativeTabs.Trigger carries the Icon/Label components in this SDK version —
+// there are no named `Icon`/`Label` exports on 'expo-router/unstable-native-tabs'.
+import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { makeStyles, useTheme } from "@/src/theme";
+
+const { Icon, Label } = NativeTabs.Trigger;
 
 const TABS: { name: string; label: string; icon: string; sf: string }[] = [
   { name: "beranda", label: "Beranda", icon: "home", sf: "house" },
@@ -23,7 +27,7 @@ function NativeIosTabs() {
     <NativeTabs tintColor={colors.brandPrimary}>
       {TABS.map((tab) => (
         <NativeTabs.Trigger key={tab.name} name={tab.name}>
-          <Icon sf={tab.sf} />
+          <Icon sf={tab.sf as any} />
           <Label>{tab.label}</Label>
         </NativeTabs.Trigger>
       ))}

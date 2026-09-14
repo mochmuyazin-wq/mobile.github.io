@@ -71,7 +71,8 @@ function AnggaranInner() {
   const hasBudgeted = (id: string) => items.some((i) => i.category_id === id);
 
   const trend = trendQuery.data?.trend ?? [];
-  const lineData = trend.map((t) => ({ value: +(t.expense / 1e6).toFixed(1), label: monthShort(t.month) }));
+  const axisLabelStyle = { color: colors.muted, fontSize: 10 };
+  const lineData = trend.map((t) => ({ value: +(t.expense / 1e6).toFixed(1), label: monthShort(t.month), labelTextStyle: axisLabelStyle }));
 
   const submitAdd = () => {
     const limit = parseInt(newLimit.replace(/\D/g, ""), 10) || 0;
@@ -134,8 +135,6 @@ function AnggaranInner() {
               yAxisColor={colors.border}
               xAxisColor={colors.border}
               yAxisTextStyle={{ color: colors.muted, fontSize: 10 }}
-              xAxisTextStyle={{ color: colors.muted, fontSize: 10 }}
-              hideArrow
               areaChart
               startFillColor={colors.brandPrimary}
               startOpacity={0.15}

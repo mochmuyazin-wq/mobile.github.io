@@ -57,8 +57,9 @@ function BerandaInner() {
 
   const trend = summary.data?.trend ?? [];
   const hasTrend = trend.some((t) => t.income > 0 || t.expense > 0);
-  const lineData = trend.map((t) => ({ value: +(t.expense / 1e6).toFixed(1), label: monthShort(t.month) }));
-  const lineData2 = trend.map((t) => ({ value: +(t.income / 1e6).toFixed(1), label: monthShort(t.month) }));
+  const axisLabelStyle = { color: colors.muted, fontSize: 10 };
+  const lineData = trend.map((t) => ({ value: +(t.expense / 1e6).toFixed(1), label: monthShort(t.month), labelTextStyle: axisLabelStyle }));
+  const lineData2 = trend.map((t) => ({ value: +(t.income / 1e6).toFixed(1), label: monthShort(t.month), labelTextStyle: axisLabelStyle }));
 
   if (me.isLoading) {
     return (
@@ -151,9 +152,12 @@ function BerandaInner() {
                 donut
                 innerRadius={52}
                 radius={80}
-                centerText={formatIDRShort(pieTotal)}
-                centerTextColor={colors.onSurface}
-                centerFontSize={12}
+                centerLabelComponent={() => (
+                  <View style={{ alignItems: "center" }}>
+                    <Text style={{ color: colors.onSurface, fontSize: 12, fontWeight: "700" }}>{formatIDRShort(pieTotal)}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 9 }}>Total</Text>
+                  </View>
+                )}
                 focusOnPress
               />
               <View style={styles.legend}>
@@ -197,8 +201,6 @@ function BerandaInner() {
                 yAxisColor={colors.border}
                 xAxisColor={colors.border}
                 yAxisTextStyle={{ color: colors.muted, fontSize: 10 }}
-                xAxisTextStyle={{ color: colors.muted, fontSize: 10 }}
-                hideArrow
               />
               <View style={styles.trendLegend}>
                 <View style={styles.legendRow}>

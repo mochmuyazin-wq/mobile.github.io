@@ -43,7 +43,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
           testID={`toast-${toast.type}`}
           style={[styles.toast, { top: insets.top + spacing.sm, backgroundColor: scheme === "dark" ? colors.surfaceSecondary : colors.surfaceInverse }]}
           pointerEvents="none">
-          <Ionicons name={iconName} size={18} color={iconColor} />
+          <Ionicons name={iconName as any} size={18} color={iconColor} />
           <Text style={[styles.message, { color: scheme === "dark" ? colors.onSurface : colors.onSurfaceInverse }]} numberOfLines={3}>
             {toast.message}
           </Text>

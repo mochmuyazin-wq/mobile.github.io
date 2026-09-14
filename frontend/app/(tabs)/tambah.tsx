@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Image, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -114,7 +114,7 @@ function TambahInner() {
   });
 
   // Photo source picker (doubles as the pre-permission explanation).
-  const [sourceSheet, setSourceSheet] = useState<null | "denied">(null);
+  const [sourceSheet, setSourceSheet] = useState<null | "denied" | "picker">(null);
   const pickImage = async (fromCamera: boolean) => {
     setSourceSheet(null);
     if (fromCamera) {

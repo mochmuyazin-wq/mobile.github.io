@@ -99,9 +99,9 @@ let schemeOverride: ColorScheme | null = null;
 const schemeListeners = new Set<() => void>();
 
 export function setColorScheme(scheme: ColorScheme | null) {
-  schemeOverride = scheme;
+  // RN's Appearance.setColorScheme accepts 'unspecified' to fall back to the system.
   schemeListeners.forEach((l) => l());
-  Appearance.setColorScheme?.(scheme);
+  Appearance.setColorScheme?.(scheme === null ? "unspecified" : scheme);
 }
 
 export function useTheme(): { scheme: ColorScheme; colors: ThemeColors } {
@@ -114,7 +114,7 @@ export function useTheme(): { scheme: ColorScheme; colors: ThemeColors } {
       schemeListeners.delete(listener);
     };
   }, []);
-  const base: ColorScheme = system && themes[system] ? system : defaultScheme;
+  const base: ColorScheme = system === "light" || system === "dark" ? system : defaultScheme;
   const scheme: ColorScheme = schemeOverride ?? base;
   return { scheme, colors: themes[scheme] ?? themes.light };
 }

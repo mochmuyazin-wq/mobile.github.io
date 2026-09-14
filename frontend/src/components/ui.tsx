@@ -1,5 +1,5 @@
-import { type ReactNode, type TextInputProps } from "react";
-import { ActivityIndicator, Pressable, Text, TextInput, View, ViewStyle } from "react-native";
+import { type ReactNode } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, TextInputProps, View, type StyleProp, type ViewStyle } from "react-native";
 import { Ionicons } from "@react-native-vector-icons/ionicons";
 import * as Haptics from "expo-haptics";
 import { FONT_FAMILY, makeStyles, radius, spacing, useTheme } from "@/src/theme";
@@ -8,7 +8,7 @@ import { FONT_FAMILY, makeStyles, radius, spacing, useTheme } from "@/src/theme"
 // Screen scaffold
 // ---------------------------------------------------------------------------
 
-export function Card({ children, style, testID }: { children: ReactNode; style?: ViewStyle; testID?: string }) {
+export function Card({ children, style, testID }: { children: ReactNode; style?: StyleProp<ViewStyle>; testID?: string }) {
   const styles = useStyles();
   return (
     <View style={[styles.card, style]} testID={testID}>
@@ -171,7 +171,7 @@ export function EmptyState({ icon, title, message, testID }: { icon: string; tit
   return (
     <View style={styles.emptyState} testID={testID}>
       <View style={styles.emptyIconCircle}>
-        <Ionicons name={icon} size={26} color={colors.brandPrimary} />
+        <Ionicons name={icon as any} size={26} color={colors.brandPrimary} />
       </View>
       <Text style={styles.emptyTitle}>{title}</Text>
       {message ? <Text style={styles.emptyMessage}>{message}</Text> : null}

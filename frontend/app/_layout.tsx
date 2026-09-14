@@ -62,11 +62,20 @@ export default function RootLayout() {
   );
 }
 
+const useNudgeStyles = makeStyles((colors) => ({
+  text: {
+    fontSize: 14,
+    color: colors.onSurfaceSecondary,
+    lineHeight: 20,
+  },
+}));
+
 // Lives INSIDE QueryClientProvider so its hooks can use react-query.
 function AppChrome() {
   const router = useRouter();
   const me = useMe();
   const [showNudge, openSettings, dismissNudge] = usePushNudge();
+  const nudgeStyles = useNudgeStyles();
 
   // Tap handlers for push notifications (warm + cold start).
   usePushTapHandler(router as any);
@@ -89,10 +98,4 @@ function AppChrome() {
   );
 }
 
-const nudgeStyles = makeStyles((colors) => ({
-  text: {
-    fontSize: 14,
-    color: colors.onSurfaceSecondary,
-    lineHeight: 20,
-  },
-}));
+const useStyles = makeStyles(() => ({}));
