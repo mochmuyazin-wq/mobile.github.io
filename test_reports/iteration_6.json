@@ -1,0 +1,31 @@
+{
+  "summary": "Iteration 6 lazy-require fix for expo-notifications import-time crash is CORRECT and VERIFIED. All 5 requested checks PASS: (1) src/lib/push.ts has NO static `from 'expo-notifications'` import — only a type-only `typeof import(...)` (erased at compile) and a lazy `require('expo-notifications')` inside `if (PUSH_AVAILABLE)` with try/catch; (2) tests/verify_push_expo_go_safe.sh PASSES both cases (Expo-Go: module evaluates cleanly even when Notifications.* is proxy-throwing; native-build: setNotificationHandler + setNotificationChannelAsync both invoked exactly once); (3) Web regression clean — http://localhost:3000 boots, login budi@dompet.test/password123 succeeds, /beranda renders with donut+trend charts, balances, categories, recent transactions, no [pageerror], no expo-notifications/ErrorBoundary/default-export errors, only expected push-relay 401 and harmless RN-web shadow*/pointerEvents deprecations; (4) Repo-wide grep of app/ and src/ finds ZERO other static imports of expo-notifications; (5) Android dev bundle at /node_modules/expo-router/entry.bundle?platform=android returns 200 in 0.55s (11.8 MB, warm). Root-cause fix confirmed: the module-scope side effect in DevicePushTokenAutoRegistration.fx.js can no longer execute in Expo Go because the module is never required there.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/frontend/tests/verify_push_expo_go_safe.sh",
+    "/app/frontend/src/lib/push.ts"
+  ],
+  "action_items": [
+    "OPTIONAL (not required for this bug): add data-testid/testID to login-identifier, login-password, login-submit on app/login for more robust future e2e testing — playwright fell back to input-index/role selectors and still worked, but explicit testIDs would be safer.",
+    "The user MUST fully close & relaunch Expo Go on their Android device (or shake -> Reload) to pick up the new bundle — the previous crash was cached in the JS runtime. No rebuild required (this is a pure JS change)."
+  ],
+  "critical_code_review_comments": [
+    "push.ts implementation is correct: (a) `typeof import('expo-notifications')` on line 18 is a TypeScript type-only import — stripped by the TS compiler, produces zero runtime code, so it will NOT execute the module in Expo Go; (b) `PUSH_AVAILABLE = Platform.OS !== 'web' && Constants.appOwnership !== 'expo'` correctly gates BOTH Expo Go (appOwnership==='expo') and web; (c) all Notifications.* usages null-guard via `if (!PUSH_AVAILABLE || !Notifications) return;` and are wrapped in try/catch — defensive belt-and-suspenders design."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (login smoke via /api/auth/login)", "frontend": "100% (all 5 requested checks pass)"},
+  "seed_data_creation": "None — used existing seeded budi@dompet.test account.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 6 shipped the correct root-cause fix for the Expo Go expo-notifications import-time crash: lazy require gated by PUSH_AVAILABLE. verify_push_expo_go_safe.sh is the regression harness — keep it green on any future push.ts edit. Known non-bugs in web: passlib bcrypt warning, push-relay 401 (placeholder EMERGENT_PUSH_KEY), RN-web shadow*/pointerEvents deprecation warnings. Login form on /login currently lacks testID props (works via input-index/role fallback) — flagged as an optional improvement, not a bug.",
+  "rca_of_issue": "RCA: expo-notifications ships DevicePushTokenAutoRegistration.fx.js which runs at MODULE-EVALUATION time (side-effect file, hence the .fx.js suffix). Its top-level code calls addPushTokenListener, which triggers warnOfExpoGoPushUsage, which throws 'Android Push notifications ... removed from Expo Go with the release of SDK 53'. Because Metro bundler eagerly evaluates every static ES-module import at bundle load, the throw happens BEFORE _layout.tsx finishes evaluating — hence the cascade 'missing default export' and 'Cannot read property ErrorBoundary of undefined' from expo-router. Fix (iter 6): drop the static ES import and require the module lazily only when PUSH_AVAILABLE (native build outside Expo Go). Verification: (a) grep proves no static import path bundles the module; (b) node harness proxies expo-notifications so ANY property access throws — push.ts still evaluates cleanly, exports all functions, and registerForPush is a safe no-op; (c) mirror harness with appOwnership='standalone' confirms native build path still invokes setNotificationHandler + setNotificationChannelAsync. Reproduction (before fix): open in Expo Go on Android -> red screen at app boot. Mitigation applied: lazy require + PUSH_AVAILABLE gate + try/catch + null-guarded call sites."
+}
