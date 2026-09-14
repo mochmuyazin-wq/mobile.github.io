@@ -1,0 +1,32 @@
+{
+  "summary": "Iteration 2 — focused test of the new 'Edit Transaksi' feature (PATCH /api/transactions/{id} + Riwayat detail-sheet edit UI). Backend: 14/14 pytest tests pass (test_transaction_edit.py) covering (a) success PATCH for amount-only, note-only, category-only and combined + partner visibility via GET /api/transactions; (b) validation errors — 422 for amount=0, unknown category_id (valid ObjectId not in wallet), malformed category_id, malformed date; 404 for unknown/malformed/deleted tx; 401 without auth; (c) budget interaction — editing UP crosses 80% -> status 'warning' + budget notifications for both members, further UP crosses 100% -> 'exceeded', editing DOWN below 80% -> back to 'ok'. Frontend E2E (mobile 390x844, budi@dompet.test): Riwayat -> tap first history row -> detail sheet shows 'Edit Transaksi' (ghost) + 'Hapus Transaksi' (danger); tap Edit -> sheet title becomes 'Edit Transaksi', edit-body renders with amount pre-filled in Rp thousands format, 9 pre-populated category chips, note pre-filled; 'Batal' returns to view mode; typing 99000 renders as '99.000'; 'Simpan Perubahan' -> toast 'Perubahan disimpan', sheet closes, list row shows -Rp99.000 (daily total also updated); empty-amount validation toast 'Nominal tidak boleh kosong' shows. No new bugs found. Known cosmetic warnings from iter-1 (gifted-charts responder props, expo-notifications web warning, push relay 401 for placeholder EMERGENT_PUSH_KEY) still present but not bugs.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_transaction_edit.py",
+    "/app/test_reports/pytest/pytest_edit_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py:838-884 update_transaction — correct: soft-deleted excluded, wallet-scoped, resets budget flags on both old and new (category, month) buckets before re-evaluating alerts; TransactionUpdateBody keeps all fields optional so partial PATCH works cleanly.",
+    "riwayat.tsx:300-306 useEffect re-seeds edit fields whenever `editMode || tx` changes — if the same detail sheet stays open and the underlying `tx` object is re-fetched (via invalidateQueries) mid-edit, unsaved user input would be overwritten. Not encountered in practice because saving closes the sheet, but worth noting: gate the reset on `editMode` transition (previous-state ref) rather than tx identity.",
+    "riwayat.tsx:309 updateTransaction body always sends the full triplet {amount, category_id, note}; that's fine since the PATCH endpoint accepts optional fields, but sending only the changed keys would be more idiomatic for a PATCH."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_transaction_edit.py (new)"
+  ],
+  "success_rate": {"backend": "100% (14/14)", "frontend": "100% (17/17 E2E assertions)"},
+  "seed_data_creation": "test_transaction_edit.py creates a TEST_edit_seed transaction (cleaned up in fixture teardown) and a TEST_edit_bdgt_<hex> category + associated budget/transaction for the threshold test (cleaned up at end). Uses existing budi/sari fixtures from conftest.py. A few residual TEST_ rows from iter-1 remain visible in Riwayat (e.g. 'TEST_b80', 'Test UI e2e') — cosmetic only.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "PATCH /api/transactions/{id} accepts optional {amount, category_id, note, type, date}. amount<1 -> 422 'Nominal tidak valid'; malformed/unknown category_id -> 422 'Kategori tidak ditemukan'; malformed date (not YYYY-MM-DD) -> 422 'Tanggal tidak valid'; unknown or soft-deleted tx -> 404 'Transaksi tidak ditemukan'; no auth -> 401. On success returns the updated tx_out doc and triggers budget_alerts_for_transaction + reset_budget_flags_if_below on both old and new (category_id, YYYY-MM) buckets. Frontend edit testIDs: transaction-detail-sheet, transaction-detail-body, transaction-edit-body, edit-transaction-button, delete-transaction-button, edit-amount-input, edit-note-input, edit-category-chip-<id>, save-edit-transaction-button, cancel-edit-transaction-button. The iter-1 files-route 502 bug is still in scope of iter-1 (not retested here).",
+  "rca_of_issue": "N/A — no bugs found in the new Edit Transaksi feature."
+}

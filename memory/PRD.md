@@ -35,13 +35,13 @@ Aplikasi mobile (Android & iOS) untuk mencatat keuangan bersama pasangan: dua ak
 - [x] Real-time sync terverifikasi: transaksi Budi muncul di Riwayat Sari tanpa refresh
 - [x] Dark mode terverifikasi di web + persist setelah reload
 - [x] Testing agent iteration 1: 2 bug diperbaiki (files route positional-args 502; tab button testID)
+- [x] **Edit Transaksi (2026-09-14)**: PATCH /api/transactions/{id} + mode edit di sheet detail riwayat (nominal, kategori, catatan) — 14/14 pytest + E2E pass, budget flags ikut naik/turun
 
 ## Prioritized Backlog
 - **P0** (sebelum produksi): user menyediakan `google-services.json` (Firebase) → push Android aktif setelah Publish + build; iOS butuh APNs key saat build
-- **P1**: edit transaksi (saat ini hanya hapus); export laporan (CSV/PDF); notifikasi digester harian
+- **P1**: export laporan (CSV/PDF); notifikasi digester harian
 - **P2**: multi-currency, wallet > 2 anggota (keluarga), split bills, widget ringkasan, laporan periodis kustom
 
 ## Next Tasks
 - Minta google-services.json dari user → taruh `frontend/google-services.json` → deploy + build agar push notifikasi jalan di perangkat asli
-- Edit transaksi + lampiran struk di layar detail
 - Export laporan bulanan

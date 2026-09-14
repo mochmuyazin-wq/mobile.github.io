@@ -196,6 +196,13 @@ export async function deleteTransaction(id: string) {
   return apiFetch(`/transactions/${id}`, { method: "DELETE" });
 }
 
+export async function updateTransaction(
+  id: string,
+  body: { amount?: number; category_id?: string; note?: string | null },
+) {
+  return apiFetch<Transaction>(`/transactions/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+}
+
 export async function getSummary(params: { period?: string; ref?: string; owner?: string }) {
   const qs = new URLSearchParams(
     Object.entries(params)

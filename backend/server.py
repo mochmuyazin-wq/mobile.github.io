@@ -171,6 +171,14 @@ class TransactionBody(BaseModel):
     receipt_path: Optional[str] = None
 
 
+class TransactionUpdateBody(BaseModel):
+    type: Optional[str] = None
+    amount: Optional[int] = Field(default=None, ge=1)
+    category_id: Optional[str] = None
+    date: Optional[str] = None
+    note: Optional[str] = Field(default=None, max_length=200)
+
+
 class BudgetBody(BaseModel):
     category_id: str
     month: str
@@ -810,6 +818,72 @@ async def create_transaction(body: TransactionBody, user: dict = Depends(current
     return tx_out(tx_doc)
 
 
+async def reset_budget_flags_if_below(wallet_id: str, category_id: str, month: str):
+    """Reset the 80%/100% warning flags when spending dropped below the thresholds."""
+    budget = await db.budgets.find_one({"wallet_id": wallet_id, "category_id": category_id, "month": month, "deleted_at": None})
+    if not budget or budget["limit_amount"] <= 0:
+        return
+    agg = db.transactions.aggregate(
+        [
+            {"$match": {"wallet_id": wallet_id, "deleted_at": None, "type": "expense", "category_id": category_id, "date": {"$regex": f"^{month}"}}},
+            {"$group": {"_id": None, "total": {"$sum": "$amount"}}},
+        ]
+    )
+    rows = await agg.to_list(1)
+    pct = (rows[0]["total"] if rows else 0) / budget["limit_amount"]
+    if pct < 0.8 and (budget.get("warned_80") or budget.get("warned_100")):
+        await db.budgets.update_one({"_id": budget["_id"]}, {"$set": {"warned_80": False, "warned_100": False}})
+
+
+@api_router.patch("/transactions/{tx_id}")
+async def update_transaction(tx_id: str, body: TransactionUpdateBody, user: dict = Depends(current_user)):
+    if not ObjectId.is_valid(tx_id):
+        raise HTTPException(404, "Transaksi tidak ditemukan")
+    tx = await db.transactions.find_one({"_id": ObjectId(tx_id), "wallet_id": user["wallet_id"], "deleted_at": None})
+    if not tx:
+        raise HTTPException(404, "Transaksi tidak ditemukan")
+
+    updates: dict = {}
+    if body.type is not None:
+        if body.type not in ("income", "expense"):
+            raise HTTPException(422, "Jenis transaksi tidak valid")
+        updates["type"] = body.type
+    if body.amount is not None:
+        if body.amount < 1:
+            raise HTTPException(422, "Nominal tidak valid")
+        updates["amount"] = int(body.amount)
+    if body.date is not None:
+        if not DATE_RE.fullmatch(body.date):
+            raise HTTPException(422, "Tanggal tidak valid")
+        updates["date"] = body.date
+    if body.category_id is not None:
+        if not ObjectId.is_valid(body.category_id):
+            raise HTTPException(422, "Kategori tidak ditemukan")
+        cat = await db.categories.find_one({"_id": ObjectId(body.category_id), "wallet_id": user["wallet_id"], "deleted_at": None})
+        if not cat:
+            raise HTTPException(422, "Kategori tidak ditemukan")
+        updates["category_id"] = str(cat["_id"])
+        updates["category_name"] = cat["name"]
+        updates["category_icon"] = cat.get("icon", "pricetag")
+    if body.note is not None:
+        updates["note"] = body.note.strip() or None
+
+    old_cat_id, old_month = tx["category_id"], tx["date"][:7]
+    await db.transactions.update_one({"_id": tx["_id"]}, {"$set": updates})
+    tx_doc = await db.transactions.find_one({"_id": tx["_id"]})
+
+    wallet = await get_wallet_or_404(user)
+    member_ids = await wallet_member_ids(wallet)
+    # Budget flags may be stale on the old category (spending moved away) ...
+    await reset_budget_flags_if_below(user["wallet_id"], old_cat_id, old_month)
+    new_cat_id, new_month = tx_doc["category_id"], tx_doc["date"][:7]
+    if (new_cat_id, new_month) != (old_cat_id, old_month):
+        await reset_budget_flags_if_below(user["wallet_id"], new_cat_id, new_month)
+    # ... and the new spend may cross a threshold.
+    await budget_alerts_for_transaction(user["wallet_id"], member_ids, tx_doc)
+    return tx_out(tx_doc)
+
+
 @api_router.delete("/transactions/{tx_id}")
 async def delete_transaction(tx_id: str, user: dict = Depends(current_user)):
     if not ObjectId.is_valid(tx_id):
@@ -818,22 +892,7 @@ async def delete_transaction(tx_id: str, user: dict = Depends(current_user)):
     if not tx:
         raise HTTPException(404, "Transaksi tidak ditemukan")
     await db.transactions.update_one({"_id": tx["_id"]}, {"$set": {"deleted_at": utcnow()}})
-    # Reset budget warning flags if spending dropped back below the thresholds.
-    wallet = await get_wallet_or_404(user)
-    member_ids = await wallet_member_ids(wallet)
-    month = tx["date"][:7]
-    budget = await db.budgets.find_one({"wallet_id": user["wallet_id"], "category_id": tx["category_id"], "month": month, "deleted_at": None})
-    if budget and budget["limit_amount"] > 0:
-        agg = db.transactions.aggregate(
-            [
-                {"$match": {"wallet_id": user["wallet_id"], "deleted_at": None, "type": "expense", "category_id": tx["category_id"], "date": {"$regex": f"^{month}"}}},
-                {"$group": {"_id": None, "total": {"$sum": "$amount"}}},
-            ]
-        )
-        rows = await agg.to_list(1)
-        pct = (rows[0]["total"] if rows else 0) / budget["limit_amount"]
-        if pct < 0.8 and (budget.get("warned_80") or budget.get("warned_100")):
-            await db.budgets.update_one({"_id": budget["_id"]}, {"$set": {"warned_80": False, "warned_100": False}})
+    await reset_budget_flags_if_below(user["wallet_id"], tx["category_id"], tx["date"][:7])
     return {"ok": True}
 
 

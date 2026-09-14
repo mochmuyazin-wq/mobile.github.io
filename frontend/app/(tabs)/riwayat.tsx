@@ -4,15 +4,15 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteTransaction, type Transaction } from "@/src/lib/api";
+import { deleteTransaction, updateTransaction, type Transaction } from "@/src/lib/api";
 import { useCategories, useFileUrl, useTransactions } from "@/src/lib/queries";
-import { Card, Chip, EmptyState, ErrorState, PrimaryButton, Skeleton } from "@/src/components/ui";
+import { Card, Chip, EmptyState, ErrorState, LabeledInput, PrimaryButton, Skeleton } from "@/src/components/ui";
 import { SheetModal } from "@/src/components/SheetModal";
 import { useToast } from "@/src/components/Toast";
 import { CategoryIcon } from "@/src/components/TransactionRow";
 import { AuthGate } from "@/src/components/AuthGate";
 import { FONT_FAMILY, makeStyles, radius, spacing, useTheme } from "@/src/theme";
-import { dateLabelID, dayLabelID, dayjs, formatIDR, lastMonths, monthKey, monthLabelID } from "@/src/lib/format";
+import { dateLabelID, dayLabelID, dayjs, formatIDR, lastMonths, monthKey, monthLabelID, parseAmount } from "@/src/lib/format";
 
 const OWNERS = [
   { value: "all", label: "Semua" },
@@ -45,6 +45,7 @@ function RiwayatInner() {
   const [catSheet, setCatSheet] = useState(false);
   const [detail, setDetail] = useState<Transaction | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   const categories = useCategories();
   const from = `${month}-01`;
@@ -211,8 +212,33 @@ function RiwayatInner() {
       </SheetModal>
 
       {/* Detail sheet */}
-      <SheetModal visible={!!detail} onClose={() => { setDetail(null); setConfirmDelete(false); }} title="Detail Transaksi" testID="transaction-detail-sheet">
-        {detail ? <DetailBody tx={detail} onDelete={() => remove.mutate(detail.id)} confirming={confirmDelete} setConfirming={setConfirmDelete} deleting={remove.isPending} /> : null}
+      <SheetModal
+        visible={!!detail}
+        onClose={() => {
+          setDetail(null);
+          setConfirmDelete(false);
+          setEditMode(false);
+        }}
+        title={editMode ? "Edit Transaksi" : "Detail Transaksi"}
+        testID="transaction-detail-sheet">
+        {detail ? (
+          <DetailBody
+            tx={detail}
+            onDelete={() => remove.mutate(detail.id)}
+            confirming={confirmDelete}
+            setConfirming={setConfirmDelete}
+            deleting={remove.isPending}
+            editMode={editMode}
+            setEditMode={setEditMode}
+            onSaved={() => {
+              setDetail(null);
+              setEditMode(false);
+              queryClient.invalidateQueries({ queryKey: ["transactions"] });
+              queryClient.invalidateQueries({ queryKey: ["summary"] });
+              queryClient.invalidateQueries({ queryKey: ["budgets"] });
+            }}
+          />
+        ) : null}
       </SheetModal>
     </View>
   );
@@ -247,17 +273,89 @@ function DetailBody({
   confirming,
   setConfirming,
   deleting,
+  editMode,
+  setEditMode,
+  onSaved,
 }: {
   tx: Transaction;
   onDelete: () => void;
   confirming: boolean;
   setConfirming: (v: boolean) => void;
   deleting: boolean;
+  editMode: boolean;
+  setEditMode: (v: boolean) => void;
+  onSaved: () => void;
 }) {
   const { colors } = useTheme();
   const styles = useStyles();
+  const toast = useToast();
+  const categories = useCategories();
   const receipt = useFileUrl(tx.receipt_path);
   const isExpense = tx.type === "expense";
+
+  const [editAmount, setEditAmount] = useState(0);
+  const [editNote, setEditNote] = useState("");
+  const [editCatId, setEditCatId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (editMode) {
+      setEditAmount(tx.amount);
+      setEditNote(tx.note ?? "");
+      setEditCatId(tx.category_id);
+    }
+  }, [editMode, tx]);
+
+  const update = useMutation({
+    mutationFn: () => updateTransaction(tx.id, { amount: editAmount, category_id: editCatId!, note: editNote.trim() || null }),
+    onSuccess: () => {
+      toast.show("Perubahan disimpan", "success");
+      onSaved();
+    },
+    onError: (e: any) => toast.show(e?.message ?? "Gagal menyimpan perubahan", "error"),
+  });
+
+  const submitEdit = () => {
+    if (!editAmount || editAmount < 1) return toast.show("Nominal tidak boleh kosong", "error");
+    if (!editCatId) return toast.show("Pilih kategori dulu", "error");
+    update.mutate();
+  };
+
+  if (editMode) {
+    return (
+      <View testID="transaction-edit-body">
+        <Text style={styles.editLabel}>Nominal</Text>
+        <View style={[styles.amountBox, { borderColor: colors.border }]}>
+          <Text style={styles.amountPrefix}>Rp</Text>
+          <TextInput
+            style={[styles.amountInput, { color: isExpense ? colors.onSurface : colors.success }]}
+            value={editAmount ? formatIDR(editAmount).slice(2).trim() : ""}
+            onChangeText={(t) => setEditAmount(parseAmount(t))}
+            keyboardType="number-pad"
+            placeholder="0"
+            placeholderTextColor={colors.muted}
+            testID="edit-amount-input"
+          />
+        </View>
+
+        <Text style={[styles.editLabel, { marginTop: spacing.lg }]}>Kategori</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingRight: spacing.lg }}>
+          {(categories.data ?? []).map((c) => (
+            <Chip key={c.id} label={c.name} selected={editCatId === c.id} onPress={() => setEditCatId(c.id)} testID={`edit-category-chip-${c.id}`} />
+          ))}
+        </ScrollView>
+
+        <View style={{ marginTop: spacing.lg }}>
+          <LabeledInput label="Catatan" placeholder="contoh: makan siang bareng" value={editNote} onChangeText={setEditNote} multiline testID="edit-note-input" />
+        </View>
+
+        <View style={{ marginTop: spacing.lg, gap: spacing.sm }}>
+          <PrimaryButton label="Simpan Perubahan" onPress={submitEdit} loading={update.isPending} testID="save-edit-transaction-button" />
+          <PrimaryButton label="Batal" variant="ghost" onPress={() => setEditMode(false)} testID="cancel-edit-transaction-button" />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View testID="transaction-detail-body">
       {tx.receipt_path ? (
@@ -275,15 +373,18 @@ function DetailBody({
         <DetailRow label="Catatan" value={tx.note?.trim() || "-"} />
         <DetailRow label="Diinput oleh" value={tx.created_by_name} />
       </View>
-      <View style={{ marginTop: spacing.lg }}>
+      <View style={{ marginTop: spacing.lg, gap: spacing.sm }}>
         {confirming ? (
-          <View style={{ gap: spacing.sm }}>
+          <>
             <Text style={{ color: colors.error, fontSize: 13, textAlign: "center" }}>Yakin hapus transaksi ini?</Text>
             <PrimaryButton label="Ya, Hapus" variant="danger" onPress={onDelete} loading={deleting} testID="confirm-delete-transaction-button" />
             <PrimaryButton label="Batal" variant="ghost" onPress={() => setConfirming(false)} testID="cancel-delete-transaction-button" />
-          </View>
+          </>
         ) : (
-          <PrimaryButton label="Hapus Transaksi" variant="danger" onPress={() => setConfirming(true)} testID="delete-transaction-button" />
+          <>
+            <PrimaryButton label="Edit Transaksi" variant="ghost" onPress={() => setEditMode(true)} testID="edit-transaction-button" />
+            <PrimaryButton label="Hapus Transaksi" variant="danger" onPress={() => setConfirming(true)} testID="delete-transaction-button" />
+          </>
         )}
       </View>
     </View>
@@ -405,5 +506,33 @@ const useStyles = makeStyles((colors) => ({
     height: 180,
     borderRadius: radius.md,
     backgroundColor: colors.surfaceTertiary,
+  },
+  editLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.onSurfaceSecondary,
+    marginBottom: spacing.xs + 2,
+  },
+  amountBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.surface,
+    minHeight: 56,
+  },
+  amountPrefix: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: colors.muted,
+    marginRight: spacing.sm,
+  },
+  amountInput: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: "800",
+    fontFamily: FONT_FAMILY,
+    paddingVertical: spacing.md,
   },
 }));
