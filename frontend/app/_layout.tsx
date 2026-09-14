@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LogBox, Platform, Text, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useFonts } from "expo-font";
@@ -24,7 +24,15 @@ LogBox.ignoreAllLogs(true);
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({ PlusJakartaSans: require("../assets/fonts/PlusJakartaSans.ttf") });
+  const [fontsLoaded, fontError] = useFonts({ PlusJakartaSans: require("../assets/fonts/PlusJakartaSans.ttf") });
+  // Never trap the user on a blank splash: if the font asset fails or takes too
+  // long (slow network / tunnel), continue with the system font instead.
+  const [fontTimedOut, setFontTimedOut] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setFontTimedOut(true), 8000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Re-apply persisted theme choice on launch.
   useEffect(() => {
@@ -38,7 +46,7 @@ export default function RootLayout() {
     if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded && !fontError && !fontTimedOut) return null;
 
   return (
     <ErrorBoundary>
