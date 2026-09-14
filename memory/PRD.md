@@ -39,6 +39,7 @@ Aplikasi mobile (Android & iOS) untuk mencatat keuangan bersama pasangan: dua ak
 - [x] **Fix overlay merah console (2026-09-14)**: svg-web-shim.web.ts menghapus props touchable/responder dari SVG shapes di web (gifted-charts) — 0 console.error, grafik tetap render
 - [x] **Fix error jaringan (2026-09-14)**: apiFetch menangkap kegagalan koneksi → pesan ramah "Tidak bisa terhubung ke server..." (kasus user: error saat join terjadi karena service di-restart sementara; join mereka ternyata sukses di DB)
 - [x] **Fix loading lama di Expo Go (2026-09-14)**: akar masalah = kompilasi dev-bundle pertama (~10MB) via tunnel + restart service; bundle android/iOS sudah di-warm (0.07s warm) + font-fallback 8 detik di _layout agar app tak bisa terkunci di splash bila asset font gagal dimuat. Solusi permanen untuk daily use: deploy + production build.
+- [x] **Fix crash Expo Go (2026-09-14)**: push.ts memanggil API notifikasi Android yang dihapus dari Expo Go (SDK 53) di module scope → root layout gagal dimuat (error berantai "missing default export", "ErrorBoundary of undefined"). Semua panggilan expo-notifications kini digate `Constants.appOwnership !== 'expo'` + try/catch; dibuktikan via runtime harness (module aman dievaluasi di lingkungan yang meniru Expo Go). Push tetap aktif di dev/production build setelah deploy.
 
 ## Prioritized Backlog
 - **P0** (sebelum produksi): user menyediakan `google-services.json` (Firebase) → push Android aktif setelah Publish + build; iOS butuh APNs key saat build
