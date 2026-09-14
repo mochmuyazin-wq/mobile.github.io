@@ -1,0 +1,47 @@
+{
+  "summary": "First full test round for DompetBerdua (Expo + FastAPI + MongoDB). Backend: 19/19 pytest tests pass covering auth (email/phone/login/wrong-pass/protected-route), pairing (invite+join+invalid-code+already-paired), categories (defaults+duplicates), transactions (create/list/filters/owner-scope/soft-delete/partner-visibility), summary (period+owner+trend), budgets (upsert+80%+100% thresholds for both members), notifications (transaction+read-all), upload (201). Frontend: login works, Beranda renders (balance, period chips, Gabungan/Kamu/Pasangan segmented, pie chart, 6-month trend, recent tx), Tambah renders and Rp thousands formatting works (50000 -> 50.000), Simpan Transaksi shows 'Transaksi tersimpan' toast and resets amount, Riwayat lists tx grouped by day with search + owner/month filter chips, Anggaran shows month chips + 6m line + 80% warning banner + progress row with 'Hampir Habis'/'Terlampaui' status, Profil shows partner 'Terhubung' badge + unread badge, dark-mode toggle switches all screens to dark and PERSISTS after reload, Notifications screen lists budget+transaction+pairing entries. Two real issues found: (1) /api/files/{path} returns 502 because requests.get is called with positional headers, so receipt image download is broken end-to-end even though upload succeeds; (2) tab bar buttons in (tabs)/_layout.tsx have no testID attributes making UI test navigation less robust (routes-based navigation still works). All previously-reported cosmetic warnings (gifted-charts responder props, expo-notifications web warning, passlib bcrypt warning, push relay 401) confirmed as non-blocking.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/files/{path}", "issue": "Returns 502 for every file. In server.py line 462-464 requests.get is called via run_in_threadpool with positional args (url, None, {'X-Storage-Key': key}, None, 60); the headers dict is passed as the `params` argument. Use keyword args: run_in_threadpool(lambda: requests.get(url, headers={'X-Storage-Key': key}, timeout=60)) or pass headers via kwargs. Receipt image preview will be broken in the UI.", "priority": "HIGH"}
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "(tabs)/_layout.tsx tab buttons", "issue": "Bottom tab items have no testID (only screen name). Add testID via tabBarButton wrapper (e.g. tab-beranda / tab-tambah / tab-riwayat / tab-anggaran / tab-profil) so playwright can tap tabs directly instead of relying on router.push URLs.", "testID": "tab-<name>", "priority": "LOW"},
+      {"component": "app/(tabs)/beranda.tsx LineChart (line 183)", "issue": "Gifted-charts LineChart passes onPressOut/onStartShouldSetResponder to <circle>; on web this triggers a red Console Error overlay in Expo dev mode that partially overlays the UI on first render. Consider disabling data-point press handlers on web (Platform.OS === 'web') or wrapping in <View pointerEvents='none'>. Same happens on Anggaran trend chart.", "testID": "trend-card", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Receipt photo preview", "issue": "Upload works but GET /api/files/{path} returns 502, so any <Image source={{uri: `${BASE}/api/files/${path}?token=...`}} /> will fail to render receipts once uploaded.", "affected_testIDs": ["receipt-image"]}
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "expo-notifications on web", "issue": "Push token listener 'not fully supported on web' — expected per problem statement, no fix needed."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_backend.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix GET /api/files/{path} in server.py: call requests.get with keyword args (headers=, timeout=) via run_in_threadpool(functools.partial(...)) or a lambda. Verify by GETting a freshly uploaded path and expecting 200 image/png.",
+    "Add testID to bottom tab buttons in app/(tabs)/_layout.tsx (Tabs.Screen options.tabBarButton wrapper with testID={`tab-${tab.name}`}) so E2E tab taps are reliable.",
+    "Optional: on Platform.OS === 'web', skip data-point press handlers on gifted-charts LineChart (Beranda + Anggaran) to remove the dev LogBox overlay for onPressOut/responder unknown handlers."
+  ],
+  "critical_code_review_comments": [
+    "server.py:462-464 — requests.get called with 5 positional args; only (url, params) are positional. This masks a real 502 download bug. Always use kwargs when passing headers.",
+    "server.py:619 — duplicate $set on same fields (wallet_id + category_id updated twice back-to-back inside pairing loop). Harmless but dead code.",
+    "server.py:902 — cats variable computed with `if False else None` — dead branch; keep only the `cat_docs` fetch below."
+  ],
+  "updated_files": [
+    "/app/backend/tests/conftest.py (new)",
+    "/app/backend/tests/test_backend.py (new)"
+  ],
+  "success_rate": {"backend": "95%", "frontend": "92%"},
+  "seed_data_creation": "Tests use pre-seeded budi@dompet.test / sari@dompet.test (already paired). All test-created rows (users, categories, transactions, budgets) are prefixed with TEST_ and cleaned up per-class. A few TEST_ transactions from earlier runs remained in the shared wallet but do not affect correctness.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend URL: EXPO_PUBLIC_BACKEND_URL=https://joint-wallet-13.preview.emergentagent.com (NOTE: the frontend .env uses EXPO_PUBLIC_BACKEND_URL, not EXPO_BACKEND_URL). Login submit button testID is 'login-submit-button'; amount input testID is 'amount-input' (not 'tambah-amount-input'); category chip testIDs are 'category-chip-<mongo_id>' (not name-based). Bottom-tab buttons have NO testID yet — navigate via direct routes /beranda /tambah /riwayat /anggaran /profil. Dark mode is toggled by the single [role=switch] on /profil; persists via AsyncStorage and works after reload. Object storage upload returns 201 and a path, but download endpoint currently 502s — see action_items.",
+  "rca_of_issue": "GET /api/files/{path} 502 RCA: run_in_threadpool(requests.get, url, None, {'X-Storage-Key': key}, None, 60) forwards positional args to requests.get whose signature is (url, params=None, **kwargs). The headers dict ends up as `params`, and the remaining Nones/60 as extra positional args, raising TypeError inside the thread; the outer try/except converts it into HTTPException(502, 'Gagal memuat file'). Reproduction: POST /api/upload (201) → GET returned path → 502. Fix: `resp = await run_in_threadpool(lambda: requests.get(f\"{STORAGE_URL}/objects/{path}\", headers={'X-Storage-Key': key}, timeout=60))`."
+}

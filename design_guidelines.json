@@ -1,0 +1,212 @@
+{
+  "app_name": "DompetBerdua",
+  "personality": "1 iOS-Native Clean",
+  "personality_one_liner": "A minimalist, highly professional finance tracker that uses generous white space and crisp typography to make joint money management feel transparent and effortless.",
+  "color": {
+    "surface": "#FFFFFF",
+    "onSurface": "#18181B",
+    "surfaceSecondary": "#F4F4F5",
+    "onSurfaceSecondary": "#27272A",
+    "surfaceTertiary": "#E4E4E7",
+    "onSurfaceTertiary": "#3F3F46",
+    "surfaceInverse": "#18181B",
+    "onSurfaceInverse": "#FFFFFF",
+    "brand": "#047857",
+    "onBrand": "#FFFFFF",
+    "brandPrimary": "#047857",
+    "onBrandPrimary": "#FFFFFF",
+    "brandSecondary": "#10B981",
+    "onBrandSecondary": "#FFFFFF",
+    "brandTertiary": "#D1FAE5",
+    "onBrandTertiary": "#064E3B",
+    "success": "#059669",
+    "onSuccess": "#FFFFFF",
+    "warning": "#F59E0B",
+    "onWarning": "#FFFFFF",
+    "error": "#EF4444",
+    "onError": "#FFFFFF",
+    "info": "#3B82F6",
+    "onInfo": "#FFFFFF",
+    "border": "#E4E4E7",
+    "borderStrong": "#A1A1AA",
+    "divider": "#F4F4F5",
+    "muted": "#71717A"
+  },
+  "color_dark": {
+    "surface": "#09090B",
+    "onSurface": "#FAFAFA",
+    "surfaceSecondary": "#18181B",
+    "onSurfaceSecondary": "#E4E4E7",
+    "surfaceTertiary": "#27272A",
+    "onSurfaceTertiary": "#D4D4D8",
+    "surfaceInverse": "#FFFFFF",
+    "onSurfaceInverse": "#18181B",
+    "brand": "#10B981",
+    "onBrand": "#022C22",
+    "brandPrimary": "#10B981",
+    "onBrandPrimary": "#022C22",
+    "brandSecondary": "#059669",
+    "onBrandSecondary": "#FFFFFF",
+    "brandTertiary": "#064E3B",
+    "onBrandTertiary": "#D1FAE5",
+    "success": "#10B981",
+    "onSuccess": "#022C22",
+    "warning": "#FBBF24",
+    "onWarning": "#451A03",
+    "error": "#F87171",
+    "onError": "#450A0A",
+    "info": "#60A5FA",
+    "onInfo": "#1E3A8A",
+    "border": "#27272A",
+    "borderStrong": "#52525B",
+    "divider": "#18181B",
+    "muted": "#A1A1AA"
+  },
+  "typography": {
+    "displayFontFamily": "Plus Jakarta Sans",
+    "textFontFamily": "Plus Jakarta Sans",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous vertical spacing, padded screen boundaries. Components do not feel cramped. Standard card gap is md.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": "1",
+  "navigation": "bottom_tabs",
+  "icon_set": "Phosphor",
+  "glassmorphism": {
+    "enabled": "true",
+    "do's": [
+      "Use glass effect on sticky bottom tab bar.",
+      "Use glass effect on bottom sheet headers.",
+      "Apply glass overlay on featured budget cards if layered over brand gradient."
+    ],
+    "dont's": [
+      "Do not use glass for standard list rows or standard cards.",
+      "Do not use glass for text input backgrounds."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Onboarding & Pairing",
+      "purpose": "Secure authentication and invitation code entry to link the couple's accounts.",
+      "states": {
+        "loading": "Subtle loading spinner in the primary CTA button.",
+        "empty": "N/A",
+        "error": "Error toast with red warning and clear instructions for incorrect invite code."
+      },
+      "layout": "Hero image at the top using abstract emerald gradient. Large typography for 'Hubungkan Akun'. Single column centered form for email/phone. Sticky CTA at the bottom using safe area."
+    },
+    {
+      "name": "Beranda (Dashboard)",
+      "purpose": "Provide a high-level real-time summary of the shared wallet, including joint balance, visual charts, and recent activity.",
+      "states": {
+        "loading": "Skeleton loaders for the main balance card and pie chart.",
+        "empty": "Empty state illustration with a prompt 'Belum ada transaksi bulan ini'.",
+        "error": "Error card in the center: 'Gagal memuat data' with a Retry button."
+      },
+      "layout": "BalanceHeader at the top inside a card with subtle gradient. Segmented control underneath (Kamu, Pasangan, Gabungan). Quick actions (Tambah, Tagih). Pie chart component from react-native-gifted-charts in surfaceSecondary card. List of 3-5 latest transactions at the bottom."
+    },
+    {
+      "name": "Tambah Transaksi",
+      "purpose": "Log a new income or expense with necessary metadata like category, photo receipt, and notes.",
+      "states": {
+        "loading": "Submission overlay with spinner.",
+        "empty": "N/A",
+        "error": "Inline validation errors below inputs (e.g., 'Nominal tidak boleh kosong')."
+      },
+      "layout": "Segmented control at top (Pemasukan / Pengeluaran). Large numeric keypad input area for nominal. Category selector as a horizontal scroll of chips or a bottom sheet. Optional photo upload box. Sticky 'Simpan' CTA at bottom inside KeyboardAvoidingView."
+    },
+    {
+      "name": "Riwayat",
+      "purpose": "Display the comprehensive list of transactions with robust filtering and search capabilities.",
+      "states": {
+        "loading": "List skeleton showing 5-6 placeholder rows.",
+        "empty": "Empty state illustration indicating no transactions match the selected filters.",
+        "error": "Error screen with 'Gagal memuat riwayat' and Retry button."
+      },
+      "layout": "Sticky header with Search bar and filter icons (Tanggal, Kategori). FlatList grouping transactions by Date. Each row uses an avatar or tinted icon to show who made the transaction (Kamu vs Pasangan) and nominal."
+    },
+    {
+      "name": "Anggaran",
+      "purpose": "Track monthly budget limits per category and trigger visual warnings when approaching limits.",
+      "states": {
+        "loading": "Progress bar skeletons.",
+        "empty": "Empty state indicating 'Belum ada anggaran diatur' with a button to add one.",
+        "error": "Error state with Retry button."
+      },
+      "layout": "List of categories with progress bars. Bars transition from brandPrimary -> warning (F59E0B) when >80% -> error (EF4444) when exceeded. Line chart at the top showing monthly trends."
+    },
+    {
+      "name": "Profil & Notifikasi",
+      "purpose": "Manage account settings, view partner status, toggle theme, and check in-app notifications.",
+      "states": {
+        "loading": "Skeleton for profile header.",
+        "empty": "Empty state in notifications tab if no recent alerts.",
+        "error": "Error state for failing to load partner info."
+      },
+      "layout": "Avatar/Initials in a brandTertiary circle at top. Partner connection status badge. Settings rows (Theme Toggle, Language, Logout) using standard list items with trailing chevrons."
+    }
+  ],
+  "images": {
+    "pairing_hero": {
+      "url": "https://images.unsplash.com/photo-1617957718645-7680362d6312?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGVtZXJhbGQlMjBncmVlbiUyMG1pbmltYWwlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc4OTM2MDc2Mnww&ixlib=rb-4.1.0&q=85",
+      "dark": "https://images.unsplash.com/photo-1634976276568-9ea10353a8cd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGVtZXJhbGQlMjBncmVlbiUyMG1pbmltYWwlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc4OTM2MDc2Mnww&ixlib=rb-4.1.0&q=85",
+      "alt": "Abstract emerald green minimal gradient background"
+    },
+    "empty_state": {
+      "url": "https://images.unsplash.com/photo-1652517209166-f17a2742a5fe?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwd2hpdGUlMjBjZXJhbWljJTIwc2hhcGVzJTIwbGF5b3V0fGVufDB8fHx8MTc4OTM2MDc3MXww&ixlib=rb-4.1.0&q=85",
+      "alt": "Minimalist white ceramic shapes layout for empty state"
+    }
+  },
+  "haptics": {
+    "primary_button": "impactMedium",
+    "tab_change": "selection",
+    "toggle_switch": "selection",
+    "transaction_save_success": "notificationSuccess",
+    "transaction_save_error": "notificationError",
+    "filter_chip_select": "impactLight"
+  },
+  "instructions_to_main_agent": [
+    "Adhere strictly to the iOS-Native Clean layout, utilizing generous whitespace and card-based grouping.",
+    "Implement the dark/light theme tokens exactly as specified, with Emerald as the primary accent color.",
+    "Do NOT use any blues, purples, or playful/cartoonish aesthetics. Keep the UI professional and neutral.",
+    "Ensure all text inputs have labels above them, never floating.",
+    "For the bottom tab navigation, strictly use 5 tabs: Beranda (Dashboard), Tambah (Add), Riwayat (History), Anggaran (Budget), Profil (Profile).",
+    "Use react-native-gifted-charts for the Dashboard pie chart and Budget line chart trends.",
+    "Implement a segmented control on the Dashboard to filter views by 'Kamu', 'Pasangan', and 'Gabungan'.",
+    "All primary CTAs (like 'Simpan' on Tambah Transaksi) must be sticky at the bottom using KeyboardAvoidingView and Safe Area handling.",
+    "For budget progress bars, dynamically shift the bar color based on percentage: brandPrimary -> warning -> error.",
+    "Remember to include the text-over-image gradient scrim (top -> bottom, transparent -> surfaceInverse) for the Pairing screen hero image."
+  ]
+}
