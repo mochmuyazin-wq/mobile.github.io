@@ -1,4 +1,4 @@
-# PRD — DompetBerdua (Couple Finance Tracker)
+# PRD — DompetKita (Couple Finance Tracker)
 
 ## Original Problem Statement
 Aplikasi mobile (Android & iOS) untuk mencatat keuangan bersama pasangan: dua akun terhubung dalam satu "ruang keuangan bersama", mencatat pemasukan & pengeluaran, sinkron real-time tanpa refresh manual, notifikasi saat pasangan menambah transaksi, dashboard dengan grafik, anggaran per kategori dengan peringatan, riwayat dengan pencarian & filter, upload foto struk. UI minimalis profesional, palet netral + aksen emerald, bottom navigation 5 tab, dark mode.

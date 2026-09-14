@@ -40,7 +40,7 @@ bearer = HTTPBearer(auto_error=False)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("dompetberdua")
 
-app = FastAPI(title="DompetBerdua API")
+app = FastAPI(title="DompetKita API")
 api_router = APIRouter(prefix="/api")
 
 
