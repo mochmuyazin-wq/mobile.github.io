@@ -1,5 +1,4 @@
 import { Platform } from "react-native";
-import { queryClient } from "@/src/query-client";
 import { storage } from "@/src/utils/storage";
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL ?? "";
@@ -99,7 +98,13 @@ export async function apiFetch<T = any>(path: string, options: RequestInit = {})
   if (!isFormData && !headers["Content-Type"] && options.body) headers["Content-Type"] = "application/json";
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  } catch {
+    // Network-level failure (server unreachable, offline, connection refused).
+    throw new ApiError(0, "Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.");
+  }
   if (res.status === 401) {
     await clearToken();
   }

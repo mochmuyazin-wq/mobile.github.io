@@ -36,6 +36,8 @@ Aplikasi mobile (Android & iOS) untuk mencatat keuangan bersama pasangan: dua ak
 - [x] Dark mode terverifikasi di web + persist setelah reload
 - [x] Testing agent iteration 1: 2 bug diperbaiki (files route positional-args 502; tab button testID)
 - [x] **Edit Transaksi (2026-09-14)**: PATCH /api/transactions/{id} + mode edit di sheet detail riwayat (nominal, kategori, catatan) — 14/14 pytest + E2E pass, budget flags ikut naik/turun
+- [x] **Fix overlay merah console (2026-09-14)**: svg-web-shim.web.ts menghapus props touchable/responder dari SVG shapes di web (gifted-charts) — 0 console.error, grafik tetap render
+- [x] **Fix error jaringan (2026-09-14)**: apiFetch menangkap kegagalan koneksi → pesan ramah "Tidak bisa terhubung ke server..." (kasus user: error saat join terjadi karena service di-restart sementara; join mereka ternyata sukses di DB)
 
 ## Prioritized Backlog
 - **P0** (sebelum produksi): user menyediakan `google-services.json` (Firebase) → push Android aktif setelah Publish + build; iOS butuh APNs key saat build

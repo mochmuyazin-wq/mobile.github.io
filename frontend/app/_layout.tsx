@@ -8,6 +8,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 
 import { ErrorBoundary } from "@/src/components/error-boundary";
 import { queryClient } from "@/src/query-client";
+import "@/src/lib/svg-web-shim";
 import { ToastProvider } from "@/src/components/Toast";
 import { SheetModal } from "@/src/components/SheetModal";
 import { PrimaryButton } from "@/src/components/ui";

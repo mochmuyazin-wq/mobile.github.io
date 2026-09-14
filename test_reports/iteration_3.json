@@ -1,0 +1,32 @@
+{
+  "summary": "Iteration 3 — verified the two user-reported issues. BUG 1 (svg-web-shim strips touchable/responder props on all react-native-svg WebShape subclasses on web): CONFIRMED FIXED. Ran playwright at 390x844, logged in as budi@dompet.test, visited /beranda (PieChart 'Pengeluaran per Kategori' + LineChart 'Tren 6 Bulan') and /anggaran (LineChart 'Pengeluaran 6 Bulan') — captured ZERO 'Unknown event handler property' console.errors across the whole session (previously flooded with them). Charts render correctly (donut with legend, line curve, x-axis labels). Only remaining console.error is the expected 401 from push relay (EMERGENT_PUSH_KEY is placeholder — known non-bug). BUG 2 (friendly Indonesian network error + real couple pairing): CONFIRMED. New backend suite test_pairing_and_regression.py exercises the FULL fresh-pairing flow via the EXTERNAL url (register two TEST_ users, POST /wallet/invite, POST /wallet/join, GET /wallet returns wallet with both members, POST a transaction as A and GET /transactions?q=... as B returns it) — 10/10 pytest pass. Real couple azinganteng/nada verified paired on wallet 6aa789f9ded55585486dfd3b via DB (their real password is NOT 'password123' — treat mgmt.credentials note as inaccurate; DB verification used instead so their data was never modified). apiFetch network-failure path verified by static check: try/catch around fetch throws new ApiError(0, 'Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.') — code review confirms the join UI catches ApiError and pushes it into the toast. Seeded couple budi/sari regression passes. No new bugs found.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_pairing_and_regression.py",
+    "/app/test_reports/pytest/pytest_iter3.xml"
+  ],
+  "action_items": [
+    "None — both reported issues are verified fixed. Optional: update /app/memory/test_credentials.md to remove the claim that azinganteng/nada have password 'password123' (their real password is different — login with 'password123' returns 401 for both accounts, so future testing agents will get confused). DB pairing status (wallet 6aa789f9ded55585486dfd3b, both members) is intact."
+  ],
+  "critical_code_review_comments": [
+    "svg-web-shim.web.ts (lines 46-50): iterates Object.values(Svg) and rewrites prepareProps on every class whose prototype exposes it — safe (idempotent, only strips known responder keys) and correctly scoped to web via the .web.ts extension; native path has a no-op file so no bundle bloat. STRIPPED_PROPS list is exhaustive for touchable + gesture responder props emitted by react-native-gifted-charts. Trade-off (tap-to-focus disabled on web) is documented in the file header — acceptable.",
+    "api.ts (lines 101-107): try/catch around fetch throws ApiError(0, 'Tidak bisa terhubung...') on any network-level rejection — correctly catches TypeError from fetch offline/refused; status=0 is a good sentinel (distinct from any HTTP status). The Indonesian message string matches the review request exactly.",
+    "api.ts (line 108-110): 401 clears the token before parsing body — good; combined with the network-error branch above, apiFetch now covers all failure modes cleanly.",
+    "_layout.tsx (line 11): shim is imported at the top of the root layout so it runs before any chart renders — correct placement. LogBox.ignoreAllLogs(true) on line 22 additionally silences yellow-box, but console.errors already gone at the source thanks to the shim."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_pairing_and_regression.py (new)"
+  ],
+  "success_rate": {"backend": "100% (10/10 pytest)", "frontend": "100% — 0/0 'Unknown event handler property' errors on beranda+anggaran; charts render; nav works; profil paired-state shown correctly"},
+  "seed_data_creation": "Fresh pairing test creates TEST_pair_a_<hex>@dompet.test and TEST_pair_b_<hex>@dompet.test users plus one TEST_pair_shared_tx transaction on the joined wallet — left in DB (no cleanup) but easy to identify by the TEST_pair_* prefix. Real couple azinganteng/nada and seeded budi/sari were only read (never mutated).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "svg-web-shim.web.ts is the fix for gifted-charts responder console.errors on web — DO NOT delete or touch it. api.ts apiFetch now throws ApiError(0, 'Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.') on network failure; UI toast is expected to show this string. For pairing tests use /api/auth/register (returns 201 or 200 — accept both), /api/wallet/invite (returns 6-digit numeric code), /api/wallet/join with {code}, then GET /api/wallet returns members array with 2 entries. Real couple's password is NOT 'password123' — verify their pairing via DB (wallet 6aa789f9ded55585486dfd3b), never via login. Backend runs pytest with parallel xdist by default (pytest.ini has -n) so pass `-o addopts=''` when running the pairing suite because it uses cls attrs across ordered tests. Known non-bugs still present: passlib bcrypt version warning, push relay 401 (placeholder key), expo-notifications web warning.",
+  "rca_of_issue": "BUG 1 RCA: react-native-gifted-charts attaches onPress/onPressOut to react-native-svg Path/Circle nodes; on web react-native-svg's WebShape.prepareProps() forwards those props unchanged plus injects 6 onStartShouldSetResponder/onResponder* responder props onto the SVG DOM element, which react-dom dev mode flags via console.error 'Unknown event handler property ...' (LogBox cannot filter errors, so they surface as a red overlay). Fix strips those 12 prop keys from prepareProps() on every WebShape subclass at bundle load time, so react-dom never sees them. Verified: 0 such errors across beranda + anggaran + riwayat + profil navigation. BUG 2 RCA: original 'refused to connect' was transient (services were restarting during the user's attempt); DB proof shows the pairing actually succeeded (wallet 6aa789f9ded55585486dfd3b has both members). The apiFetch fetch()-throws path previously bubbled a raw TypeError with English text; now wrapped as ApiError(0, Indonesian message) — the join screen's existing catch(ApiError) branch will now toast a friendly Bahasa Indonesia message instead of a cryptic 'TypeError: Failed to fetch'. No further mitigation required."
+}
