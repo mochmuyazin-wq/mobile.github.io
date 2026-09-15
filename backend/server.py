@@ -22,6 +22,8 @@ from passlib.context import CryptContext
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 from starlette.concurrency import run_in_threadpool
 
+ import certifi
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
@@ -31,7 +33,7 @@ JWT_SECRET = os.environ["JWT_SECRET"]
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", "43200"))
 
-mongo_client = AsyncIOMotorClient(MONGO_URL)
+mongo_client = AsyncIOMotorClient(MONGO_URL, tlsCAFile=certifi.where())
 db = mongo_client[DB_NAME]
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
