@@ -21,8 +21,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from passlib.context import CryptContext
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 from starlette.concurrency import run_in_threadpool
-
- import certifi
+import certifi
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
