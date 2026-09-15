@@ -16,13 +16,17 @@
       }
     },
     "android": {
-      "googleServicesFile": "./google-services.json",
+  
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
       "package": "com.emergent.jointwallet.ina2cn",
-      "permissions": ["POST_NOTIFICATIONS", "CAMERA"]
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -58,6 +62,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "54dce07b-4e35-4e2e-a573-fcac926fb708"
+      }
     }
   }
 }
