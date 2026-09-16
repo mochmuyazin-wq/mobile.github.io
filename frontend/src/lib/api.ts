@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import { storage } from "@/src/utils/storage";
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL ?? "";
+const BACKEND_URL = "https://mobilegithubio-production-548d.up.railway.app";
 export const API_URL = `${BACKEND_URL}/api`;
 export const TOKEN_KEY = "auth_token";
 
